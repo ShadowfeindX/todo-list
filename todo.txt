@@ -1,0 +1,80 @@
+-- BEGIN
+module TodoList exposing (..)
+
+-- IMPORTS
+import Html exposing (..)
+import Html.App as Html
+import Html.Events exposing (..)
+import Html.Attributes exposing (..)
+
+-- COMPONENTS
+import Array
+import Array.Extra
+
+--MAIN
+main = Html.beginnerProgram {
+  model = model,
+  view = view,
+  update = update
+  }
+
+-- MODEL
+type alias Model = { person : String, todo : List (Html Msg), new : String}
+
+model : Model
+model = {
+  person = "Jason",
+  todo = [ li [][ button [ onClick (Change 0) ][ text "Change" ], button [ onClick (Delete 0) ][ text "Delete" ], text " Sample Todo Item" ] ],
+  new = ""
+  }
+
+
+-- UPDATE
+type Msg = Add | Edit | Clear | Input String | Change Int | Delete Int
+
+update : Msg -> Model -> Model
+update msg model =
+  case msg of
+    Add -> { model | todo = (addTodo model.new model.todo) }
+    Edit -> { model | todo = (editTodo model) }
+    Clear -> { model | todo = [] }
+    Input item -> { model | new = item }
+    Change index -> { model | todo = (changeTodo index model.new model.todo) }
+    Delete index-> { model | todo = (deleteTodo index model.todo) }
+
+addTodo : String -> List (Html Msg) -> List (Html Msg)
+addTodo new todo = 
+  todo ++ [ li [][ button [ onClick (Change (List.length todo)) ][ text "Change" ], button [ onClick (Delete (List.length todo)) ][ text "Delete" ], text (" " ++ new) ] ]
+
+editTodo : Model -> List (Html Msg)
+editTodo model =
+  --newItem = model.new |> addTodo [] |> Array.fromList |> Array.Extra.getUnsafe 0
+  --newItem = Array.Extra.getUnsafe 0 (Array.fromList(addTodo model.new []))
+  List.repeat (List.length model.todo) ([] |> addTodo model.new |> Array.fromList |> Array.Extra.getUnsafe 0)
+
+changeTodo : Int -> String -> List (Html Msg) -> List (Html Msg)
+changeTodo index new todo = 
+  todo
+  |> Array.fromList
+  |> Array.set index (li [][ button [ onClick (Change index) ][ text "Change" ], button [ onClick (Delete index) ][ text "Delete" ], text (" " ++ new) ])
+  |> Array.toList
+
+deleteTodo : Int -> List (Html Msg) -> List (Html Msg)
+deleteTodo index todo =
+  todo
+  |> Array.fromList
+  |> Array.Extra.removeAt index
+  |> Array.toList
+
+-- VIEW
+view : Model -> Html Msg
+view model = 
+  div [] [
+    h2 [][ text ("Todo List For: " ++ model.person) ],
+    button [ onClick Add ][ text "Add Item" ],
+    input [ type' "text", placeholder "New Todo Item", onInput Input ][],
+    button [ onClick Edit ][ text "Edit All" ],
+    button [ onClick Clear ][ text "Clear All" ],
+    ol [] model.todo
+  ]
+-- END
